@@ -1,0 +1,12 @@
+---
+description: CI of the Tool
+globs:
+alwaysApply: false
+---
+Try to use the following colors, which define the CI of the tool:
+# 003145
+# FFFFFF
+# FB5A17
+
+Also, apply a modern look, with rounded edges and button hovering on mouseover.
+Make Sure dark blue buttons (if hover) always have white text.

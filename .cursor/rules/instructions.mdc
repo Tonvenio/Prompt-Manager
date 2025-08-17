@@ -1,0 +1,105 @@
+---
+description: "Project-wide assistant rules for the Next.js + TypeScript + Tailwind app in `langfuse-ui`"
+globs: "langfuse-ui/**"
+alwaysApply: true
+---
+
+## Role and priorities
+- **Goal**: Implement features, fixes, and refactors consistent with this project’s stack and conventions, prioritizing correctness, security, and maintainability.
+- **Do**: keep changes minimal, readable, and idiomatic to Next.js App Router and TypeScript strict mode.
+- **Avoid**: introducing new frameworks or build tools, leaking secrets to the client, breaking client/server boundaries, large architectural changes without explicit request.
+
+## Tech stack and key conventions
+- **Framework**: Next.js 15 (App Router) with React 19.
+- **Language**: TypeScript (strict). Path alias `@/*` maps to `langfuse-ui/*`.
+- **Styling**: Tailwind CSS v4 via `@tailwindcss/postcss`.
+- **Linting**: ESLint 9 flat config extending `next/core-web-vitals` and `next/typescript`.
+- **Runtime**: Node 20+ (recommended). Use native `fetch` for HTTP.
+- **Dev commands**:
+  - `npm run dev` (Next dev with Turbopack)
+  - `npm run build`
+  - `npm run start`
+  - `npm run lint`
+- **Auth**: Cookie `auth_user`; enforced by `middleware.ts` with redirects to `/login` or `/prompts`.
+- **Analytics**: Server-side logging via `app/api/analytics/_server.ts::logServerEvent` (writes to `.analytics.log` or console).
+- **Langfuse server helpers**: `app/api/langfuse/_lib.ts` provides `lfAuthHeader`, `lfHost`, `lfJson`.
+
+## Editing rules
+- **Client vs Server**
+  - Add `"use client"` only when needed (state, effects, DOM, browser APIs). Server-only modules must not be imported from client components.
+  - Do not use Node APIs (e.g., `fs`, `process.env`) in client components.
+  - Keep secrets and credentials server-side only.
+
+- **API Route Handlers** (`app/api/**/route.ts`)
+  - Export HTTP methods (e.g., `export async function POST(req: NextRequest) { ... }`).
+  - Parse JSON safely, allow graceful handling of invalid bodies. Validate and narrow types.
+  - Return `NextResponse` with appropriate status codes. Do not expose stack traces or internal details to clients.
+  - For mutating client fetches, set `{ cache: "no-store" }` on the caller side.
+  - Reuse helpers (`lfAuthHeader`, `lfJson`) for Langfuse calls; do not duplicate auth logic.
+
+- **Middleware** (`middleware.ts`)
+  - Respect `PUBLIC_PATHS`. If no `auth_user` cookie and path is protected, redirect to `/login?next=<path>`.
+  - If logged in and accessing `/login`, redirect to `/prompts`.
+
+- **Fetching and external services**
+  - Prefer `fetch` (native). Avoid adding `axios`.
+  - Use `lfHost()` and `lfAuthHeader()` for Langfuse API targets and credentials.
+  - Throw meaningful errors on non-OK responses (see `lfJson`). Avoid leaking raw upstream bodies to clients.
+
+- **Types and safety**
+  - Keep TypeScript strict. Avoid `any` and unsafe casts. Define request/response types and discriminated unions where useful.
+  - Explicitly annotate exported function signatures. Let local variables be inferred when obvious.
+  - Narrow `unknown` and handle edge cases early with guard clauses.
+
+- **Error handling and logging**
+  - Use try/catch at async boundaries in route handlers. Return stable error messages and status codes.
+  - Server logs should be concise. Do not log secrets or PII. Prefer `logServerEvent` for analytics events.
+
+- **Styling and UI**
+  - Tailwind utility-first classes; avoid inline styles unless necessary.
+  - Prefer semantic HTML and basic a11y (labels for inputs, `alt` text for images, keyboard-focusable controls).
+  - Keep components small and focused; name components in PascalCase and files in PascalCase or as Next.js route conventions require.
+
+- **Imports and structure**
+  - Use path alias `@/*` where appropriate to avoid deep relative paths.
+  - Keep Next.js App Router structure: pages in `app/**`, API routes under `app/api/**`, per-route `route.ts`.
+
+- **Environment and secrets**
+  - Access `process.env` only on the server. Never expose secret values in client bundles.
+  - Required envs for Langfuse server helpers: `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, optional `LANGFUSE_HOST`.
+
+## Patterns to follow
+- **API handler skeleton**
+```ts
+import { NextRequest, NextResponse } from "next/server";
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json().catch(() => ({}));
+    // validate and narrow here
+    return new NextResponse(null, { status: 204 });
+  } catch {
+    return new NextResponse("Internal error", { status: 500 });
+  }
+}
+```
+
+- **Calling Langfuse from the server**
+```ts
+import { lfAuthHeader, lfHost, lfJson } from "@/app/api/langfuse/_lib";
+
+const url = `${lfHost()}/api/some-endpoint`;
+const data = await lfJson(url, { headers: { ...lfAuthHeader() } });
+```
+
+## Assistant checklist before finishing an edit
+- **Lint/build**: Ensure `npm run lint` and `npm run build` pass (or provide fixes).
+- **Boundaries**: No server-only APIs imported into client code; secrets remain server-side.
+- **Types**: Public function signatures typed; inputs validated; no accidental `any`.
+- **Routes**: Correct HTTP method exports; appropriate status codes; safe error messages.
+- **Imports**: Use `@/*` alias; avoid unused imports.
+- **UI**: Tailwind classes consistent; basic a11y considerations applied.
+
+## When proposing changes
+- Keep edits minimal and scoped. Explain the impact briefly in PR descriptions or summary notes.
+- Prefer iterative refactors over sweeping changes unless explicitly requested.
