@@ -55,7 +55,7 @@ const SAMPLE_WORKFLOWS: Workflow[] = [
 
 const FILTERS = ["Favorites", "Created by me", "Osborne Clarke", "Legora"];
 
-export default function LibraryPage(): JSX.Element {
+export default function LibraryPage(): React.ReactElement {
   const [query, setQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const [selected, setSelected] = useState<Workflow | null>(SAMPLE_WORKFLOWS[0]);

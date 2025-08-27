@@ -59,7 +59,7 @@ export const AnimatedSection: React.FC<AnimatedSectionProps> = ({
               const text = titleRef.current.textContent || '';
               titleRef.current.textContent = '';
               
-              let obj = { value: 0 };
+              const obj = { value: 0 };
               gsap.to(obj, {
                 value: text.length,
                 duration: 1,
@@ -96,7 +96,7 @@ export const AnimatedSection: React.FC<AnimatedSectionProps> = ({
               );
 
               // Count up animation
-              let countObj = { value: 0 };
+              const countObj = { value: 0 };
               gsap.to(countObj, {
                 value: count,
                 duration: 1.5,

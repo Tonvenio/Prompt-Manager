@@ -9,3 +9,4 @@
 
 ## Lessons Learned
 - [2025-08-27] Prefer adding new routes rather than replacing existing screens to avoid regressions.
+- [2025-08-27] Keep sample data local for demos to avoid server dependencies during UI scaffolding.

@@ -134,7 +134,9 @@ export const useMorphGradient = (
       }
     });
 
-    return () => tl.kill();
+    return () => {
+      tl.kill();
+    };
   }, [colors, duration]);
 
   return elementRef;
@@ -157,7 +159,7 @@ export const useIntersectionAnimation = (
           if (entry.isIntersecting && !hasAnimated.current) {
             hasAnimated.current = true;
             
-            gsap.to(entry.target, {
+            gsap.to(entry.target as Element, {
               ...AnimationConfig.presets.fadeInUp.to,
               duration: animationUtils.getResponsiveDuration(0.6),
               ease: AnimationConfig.easing.smoothOut,

@@ -157,9 +157,13 @@ export const AnimatedFilterPill: React.FC<AnimatedFilterPillProps> = ({
     if (!pillRef.current) return;
 
     if (active) {
-      // Active state animation
+      // Active state animation using keyframes to satisfy types
       gsap.to(pillRef.current, {
-        scale: [1, 1.05, 1],
+        keyframes: [
+          { scale: 1 },
+          { scale: 1.05 },
+          { scale: 1 },
+        ],
         backgroundColor: '#FF8A50',
         duration: 0.6,
         ease: 'power2.inOut',
@@ -171,9 +175,14 @@ export const AnimatedFilterPill: React.FC<AnimatedFilterPillProps> = ({
 
   const handleClick = () => {
     if (pillRef.current) {
-      // Click animation
+      // Click animation using keyframes
       gsap.to(pillRef.current, {
-        scale: [1, 0.95, 1.1, 1],
+        keyframes: [
+          { scale: 1 },
+          { scale: 0.95 },
+          { scale: 1.1 },
+          { scale: 1 },
+        ],
         duration: 0.4,
         ease: 'elastic.out(1, 0.5)',
       });
@@ -223,7 +232,7 @@ export const AnimatedViewToggle: React.FC<AnimatedViewToggleProps> = ({
     // Haptic-like animation
     if (containerRef.current) {
       gsap.to(containerRef.current, {
-        scale: [1, 0.98, 1],
+        keyframes: [{ scale: 1 }, { scale: 0.98 }, { scale: 1 }],
         duration: 0.2,
         ease: 'power2.inOut',
       });

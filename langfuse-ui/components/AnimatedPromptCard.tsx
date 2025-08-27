@@ -4,8 +4,14 @@ import React, { useRef, useEffect } from 'react';
 import { gsap } from 'gsap';
 import { TagPills } from '../app/prompts/TagPills';
 
+interface PromptSummary {
+  name: string;
+  lastUpdatedAt: string | number | Date;
+  tags?: string[];
+}
+
 interface AnimatedPromptCardProps {
-  prompt: any;
+  prompt: PromptSummary;
   index: number;
   gradient: string;
   pattern: string;
@@ -130,9 +136,13 @@ export const AnimatedPromptCard: React.FC<AnimatedPromptCardProps> = ({
         duration: 0.3,
       });
 
-      // Button pulse
+      // Button pulse using keyframes (typesafe)
       gsap.to(button, {
-        scale: [1, 1.1, 1],
+        keyframes: [
+          { scale: 1 },
+          { scale: 1.1 },
+          { scale: 1 },
+        ],
         duration: 0.6,
         ease: 'power2.inOut',
       });
@@ -141,7 +151,10 @@ export const AnimatedPromptCard: React.FC<AnimatedPromptCardProps> = ({
       if (statsRef.current) {
         const statElements = statsRef.current.children;
         gsap.to(statElements, {
-          y: [-3, 0],
+          keyframes: [
+            { y: -3 },
+            { y: 0 },
+          ],
           duration: 0.4,
           stagger: 0.05,
           ease: 'elastic.out(1, 0.5)',
@@ -194,10 +207,12 @@ export const AnimatedPromptCard: React.FC<AnimatedPromptCardProps> = ({
 
       // Card press effect
       gsap.to(card, {
-        scale: 0.98,
-        duration: 0.1,
-        yoyo: true,
-        repeat: 1,
+        keyframes: [
+          { scale: 1 },
+          { scale: 0.98 },
+          { scale: 1 },
+        ],
+        duration: 0.2,
         ease: 'power2.inOut',
       });
     };
@@ -241,7 +256,7 @@ export const AnimatedPromptCard: React.FC<AnimatedPromptCardProps> = ({
       folderText: 'text-amber-700',
       buttonBg: 'from-yellow-500 to-orange-500',
     },
-  };
+  } as const;
 
   const theme = themeColors[colorTheme];
 
@@ -303,7 +318,7 @@ export const AnimatedPromptCard: React.FC<AnimatedPromptCardProps> = ({
                 </span>
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gradient-to-r from-green-500/10 to-green-600/10 text-green-700 text-xs font-medium">
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                   </svg>
                   {socialSummary.comments}
                 </span>

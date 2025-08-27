@@ -60,7 +60,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ nam
   const text = String((body?.text ?? "")).trim();
   if (!text) return new NextResponse("Missing text", { status: 400 });
 
-  const store = cookies();
+  const store = await cookies();
   const author = (store.get("auth_user")?.value || body?.author || "Anonymous").toString();
   const comment: Comment = {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,

@@ -15,7 +15,7 @@ function fmt(n: number) { return new Intl.NumberFormat().format(n); }
 
 export default async function RankingPage() {
   // Build absolute URL for server-side fetch to avoid "Failed to parse URL" in some runtimes
-  const h = headers();
+  const h = await headers();
   const proto = h.get("x-forwarded-proto") || "http";
   const host = h.get("host") || "localhost:3000";
   const base = process.env.NEXT_PUBLIC_BASE_URL || `${proto}://${host}`;
