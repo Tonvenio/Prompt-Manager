@@ -7,6 +7,10 @@ import { AnimatedSearchBar, AnimatedFilterPill, AnimatedViewToggle } from "@/com
 import { useStaggerAnimation, useIntersectionAnimation } from "@/hooks/useAnimations";
 import { TagPills } from "@/app/prompts/TagPills";
 import { trackClient } from "@/app/components/ClientAnalytics";
+import { UsePromptModal } from "@/app/prompts/[name]/UsePromptModal";
+import { ImproveModal } from "@/app/prompts/[name]/ImproveModal";
+import { CompareModal } from "@/app/prompts/[name]/CompareModal";
+import LibraryComments from "@/app/library/LibraryComments";
 
 // Types reused from /prompts
 type PromptMeta = {
@@ -118,6 +122,33 @@ export default function LibraryPage(): React.ReactElement {
 
   // Helper: current selection object
   const selected = useMemo(() => prompts.find(p => p.name === selectedName) || null, [prompts, selectedName]);
+
+  const [showUse, setShowUse] = useState(false);
+  const [showImprove, setShowImprove] = useState(false);
+  const [showCompare, setShowCompare] = useState(false);
+  const [improveStatus, setImproveStatus] = useState<"waiting"|"done"|"error">("waiting");
+  const [improveResult, setImproveResult] = useState<string>("");
+
+  async function startImprove() {
+    if (!selected) return;
+    setShowImprove(true);
+    setImproveStatus("waiting");
+    setImproveResult("");
+    try {
+      const res = await fetch('/api/agents/improve', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: selected.lastPromptText || '' }) });
+      const j = await res.json();
+      const out = String(j?.output || "");
+      setImproveResult(out);
+      setImproveStatus("done");
+    } catch {
+      setImproveStatus("error");
+    }
+  }
+
+  function applyImprovedText(_newText: string) {
+    // Phase C will save to Langfuse; for now just close
+    setShowImprove(false);
+  }
 
   // Tag pill click => set filters or search
   function handleTagClick(tag: string) {
@@ -373,7 +404,11 @@ export default function LibraryPage(): React.ReactElement {
             <div ref={detailRef as unknown as React.RefObject<HTMLDivElement>} className="space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-semibold text-[#003145]">{(() => { const parts = selected.name.split('/'); return parts[parts.length - 1]; })()}</h2>
-                <button className="px-4 py-2 rounded-lg text-white bg-[#003145] hover:bg-[#002535] transition">Use</button>
+                <div className="flex items-center gap-2">
+                  <button className="px-3 py-2 rounded-lg text-white bg-[#003145] hover:bg-[#002535] transition" onClick={() => setShowUse(true)}>Use</button>
+                  <button className="px-3 py-2 rounded-lg border" onClick={startImprove}>Improve</button>
+                  <button className="px-3 py-2 rounded-lg border" onClick={() => setShowCompare(true)}>Compare</button>
+                </div>
               </div>
 
               <div className="grid grid-cols-3 gap-3">
@@ -392,8 +427,24 @@ export default function LibraryPage(): React.ReactElement {
               </div>
 
               <div className="rounded-xl border border-[#003145]/10 bg-white/80 p-4">
-                <div className="text-sm text-[#003145]/80">Select a tag to filter, or click Use to run this prompt.</div>
+                <div className="text-sm text-[#003145]/80">Tags</div>
+                <div className="mt-2"><TagPills tags={selected.tags || []} onTagClick={handleTagClick} /></div>
               </div>
+
+              <div className="rounded-xl border border-[#003145]/10 bg-white/80 p-4">
+                <div className="text-sm text-[#003145]/80 mb-2">Comments</div>
+                <LibraryComments name={selected.name} />
+              </div>
+
+              {showUse && (
+                <UsePromptModal text={String(selected.lastPromptText || '')} name={selected.name} tags={selected.tags || []} onClose={() => setShowUse(false)} />
+              )}
+              {showImprove && (
+                <ImproveModal promptText={String(selected.lastPromptText || '')} onClose={() => setShowImprove(false)} onApply={applyImprovedText} name={selected.name} status={improveStatus} result={improveResult} setResult={setImproveResult} />
+              )}
+              {showCompare && (
+                <CompareModal promptOld={String(selected.lastPromptText || '')} promptNew={improveResult || String(selected.lastPromptText || '')} onClose={() => setShowCompare(false)} name={selected.name} />
+              )}
             </div>
           )}
         </section>
