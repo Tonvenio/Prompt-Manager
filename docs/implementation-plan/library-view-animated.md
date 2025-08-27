@@ -12,10 +12,10 @@ We want a new Library view that matches the provided screenshot: a left navigati
 - Keeping strict TypeScript and lint rules green.
 
 ## High-level Task Breakdown
-- [ ] Create feature branch from `main` named `feat/library-view-animated`.
-- [ ] Scaffold `app/library/page.tsx` with 3‑pane layout.
-- [ ] Implement animated sidebar with filters and create button.
-- [ ] Implement animated list with search and selection state.
+- [x] Create feature branch from `main` named `feat/library-view-animated`.
+- [x] Scaffold `app/library/page.tsx` with 3‑pane layout.
+- [x] Implement animated sidebar with filters and create button.
+- [x] Implement animated list with search and selection state.
 - [ ] Implement animated right details panel including header actions and step card.
 - [ ] Polish styles to closely match the screenshot (spacing/typography/pills).
 - [ ] Build and lint until green; fix any regressions.
@@ -33,10 +33,10 @@ We want a new Library view that matches the provided screenshot: a left navigati
 - Lint/build: `npm run build` must succeed; run `npm run lint` if needed.
 
 ## Project Status Board
-- [ ] Branch created
-- [ ] Scaffolded route
-- [ ] Sidebar implemented
-- [ ] List + search implemented
+- [x] Branch created
+- [x] Scaffolded route
+- [x] Sidebar implemented
+- [x] List + search implemented
 - [ ] Details panel implemented
 - [ ] Styling polish
 - [ ] Build/lint green
