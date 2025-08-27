@@ -11,6 +11,7 @@ import { UsePromptModal } from "@/app/prompts/[name]/UsePromptModal";
 import { ImproveModal } from "@/app/prompts/[name]/ImproveModal";
 import { CompareModal } from "@/app/prompts/[name]/CompareModal";
 import LibraryComments from "@/app/library/LibraryComments";
+import LibraryDetailsModal from "@/app/library/LibraryDetailsModal";
 
 // Types reused from /prompts
 type PromptMeta = {
@@ -126,6 +127,7 @@ export default function LibraryPage(): React.ReactElement {
   const [showUse, setShowUse] = useState(false);
   const [showImprove, setShowImprove] = useState(false);
   const [showCompare, setShowCompare] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
   const [improveStatus, setImproveStatus] = useState<"waiting"|"done"|"error">("waiting");
   const [improveResult, setImproveResult] = useState<string>("");
 
@@ -289,6 +291,20 @@ export default function LibraryPage(): React.ReactElement {
 
   const totalCount = filtered.length;
 
+  // Compute top tags by frequency to avoid rendering hundreds
+  const topTags = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const p of prompts) {
+      for (const t of p.tags || []) {
+        counts.set(t, (counts.get(t) || 0) + 1);
+      }
+    }
+    return Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 12)
+      .map(([t]) => t);
+  }, [prompts]);
+
   return (
     <div className="h-full w-full flex">
       <aside className="w-80 shrink-0 border-r border-[#003145]/10 bg-white/70 backdrop-blur-sm">
@@ -298,10 +314,10 @@ export default function LibraryPage(): React.ReactElement {
             <AnimatedViewToggle viewMode={viewMode} onChange={setViewMode} />
           </div>
 
-          <div className="text-xs uppercase tracking-wide text-[#003145]/60 mb-2">Tag filter</div>
-          <div className="flex flex-wrap gap-2 mb-4 max-h-40 overflow-y-auto pr-1">
-            {allTags.slice(0, 30).map((t) => (
-              <AnimatedFilterPill key={t} index={0} label={t} active={activeTag === t} onClick={() => setActiveTag(activeTag === t ? "" : t)} />
+          <div className="text-xs uppercase tracking-wide text-[#003145]/60 mb-2">Top tags</div>
+          <div className="grid grid-cols-2 gap-2 mb-4 pr-1">
+            {topTags.map((t, i) => (
+              <AnimatedFilterPill key={t} index={i} label={t} active={activeTag === t} onClick={() => setActiveTag(activeTag === t ? "" : t)} />
             ))}
           </div>
 
@@ -357,23 +373,23 @@ export default function LibraryPage(): React.ReactElement {
                         </tr>
                       )}
                       {(section.title === 'Community Prompts' ? recentNew : section.items).map((p) => (
-                        <tr key={`${section.title}-${p.name}`} className="hover:bg-gray-50 cursor-pointer" data-list-item onClick={() => { setSelectedName(p.name); trackClient('library_select', { name: p.name }); }}>
+                        <tr key={`${section.title}-${p.name}`} className="hover:bg-gray-50 cursor-pointer" data-list-item onClick={() => { setSelectedName(p.name); setShowDetails(true); trackClient('library_select', { name: p.name }); }}>
                           <td className="p-2 border-b">{(() => { const parts = p.name.split('/'); return parts.length > 1 ? parts.slice(0, -1).join('/') : parts[0]; })()}</td>
                           <td className="p-2 border-b">{(() => { const parts = p.name.split('/'); return parts[parts.length - 1]; })()}</td>
                           <td className="p-2 border-b"><TagPills tags={p.tags || []} onTagClick={handleTagClick} /></td>
                           <td className="p-2 border-b">{(p.labels || []).join(", ")}</td>
                           <td className="p-2 border-b">{(() => { const m = (window as any).__promptSocialSummary || {}; const s = m[p.name] || { comments: 0, reactions: 0 }; return (<span className="inline-flex items-center gap-2 text-xs"><span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#003145]/10 text-[#003145]" title="Reactions">👏 {s.reactions}</span><span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#003145]/10 text-[#003145]" title="Comments">💬 {s.comments}</span></span>); })()}</td>
-                          <td className="p-2 border-b" onClick={(e) => e.stopPropagation()}><button className="px-2 py-1 rounded bg-[#FB5A17] text-white hover:opacity-90" onClick={() => setSelectedName(p.name)}>Open</button></td>
+                          <td className="p-2 border-b" onClick={(e) => e.stopPropagation()}><button className="px-2 py-1 rounded bg-[#FB5A17] text-white hover:opacity-90" onClick={() => { setSelectedName(p.name); setShowDetails(true); }}>Open</button></td>
                         </tr>
                       ))}
                       {section.title === 'Community Prompts' && othersExcludingRecent.map((p) => (
-                        <tr key={`others-${p.name}`} className="hover:bg-gray-50 cursor-pointer" onClick={() => { setSelectedName(p.name); trackClient('library_select', { name: p.name }); }}>
+                        <tr key={`others-${p.name}`} className="hover:bg-gray-50 cursor-pointer" onClick={() => { setSelectedName(p.name); setShowDetails(true); trackClient('library_select', { name: p.name }); }}>
                           <td className="p-2 border-b">{(() => { const parts = p.name.split('/'); return parts.length > 1 ? parts.slice(0, -1).join('/') : parts[0]; })()}</td>
                           <td className="p-2 border-b">{(() => { const parts = p.name.split('/'); return parts[parts.length - 1]; })()}</td>
                           <td className="p-2 border-b"><TagPills tags={p.tags || []} onTagClick={handleTagClick} /></td>
                           <td className="p-2 border-b">{(p.labels || []).join(", ")}</td>
                           <td className="p-2 border-b">{(() => { const m = (window as any).__promptSocialSummary || {}; const s = m[p.name] || { comments: 0, reactions: 0 }; return (<span className="inline-flex items-center gap-2 text-xs"><span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#003145]/10 text-[#003145]" title="Reactions">👏 {s.reactions}</span><span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#003145]/10 text-[#003145]" title="Comments">💬 {s.comments}</span></span>); })()}</td>
-                          <td className="p-2 border-b" onClick={(e) => e.stopPropagation()}><button className="px-2 py-1 rounded bg-[#FB5A17] text-white hover:opacity-90" onClick={() => setSelectedName(p.name)}>Open</button></td>
+                          <td className="p-2 border-b" onClick={(e) => e.stopPropagation()}><button className="px-2 py-1 rounded bg-[#FB5A17] text-white hover:opacity-90" onClick={() => { setSelectedName(p.name); setShowDetails(true); }}>Open</button></td>
                         </tr>
                       ))}
                     </React.Fragment>
@@ -386,7 +402,7 @@ export default function LibraryPage(): React.ReactElement {
             ) : (
               <div ref={listRef} className="space-y-3">
                 {filtered.map((p) => (
-                  <button key={p.name} data-list-item onClick={() => { setSelectedName(p.name); trackClient('library_select', { name: p.name }); }} className={`w-full text-left rounded-xl border px-4 py-3 bg-white/80 backdrop-blur-sm transition-shadow hover:shadow ${selectedName === p.name ? 'border-[#FB5A17]/40' : 'border-[#003145]/10'}`}>
+                  <button key={p.name} data-list-item onClick={() => { setSelectedName(p.name); setShowDetails(true); trackClient('library_select', { name: p.name }); }} className={`w-full text-left rounded-xl border px-4 py-3 bg-white/80 backdrop-blur-sm transition-shadow hover:shadow ${selectedName === p.name ? 'border-[#FB5A17]/40' : 'border-[#003145]/10'}`}>
                     <div className="flex items-center justify-between">
                       <div className="font-semibold text-[#003145]">{(() => { const parts = p.name.split('/'); return parts[parts.length - 1]; })()}</div>
                       <div className="text-xs text-[#003145]/60">{new Date(p.lastUpdatedAt).toLocaleString()}</div>
@@ -400,42 +416,15 @@ export default function LibraryPage(): React.ReactElement {
         </section>
 
         <section ref={rightPanelRef} className="p-6 overflow-y-auto">
+          {selected && showDetails && (
+            <LibraryDetailsModal
+              name={selected.name}
+              onClose={() => setShowDetails(false)}
+            />
+          )}
+
           {selected && (
-            <div ref={detailRef as unknown as React.RefObject<HTMLDivElement>} className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-semibold text-[#003145]">{(() => { const parts = selected.name.split('/'); return parts[parts.length - 1]; })()}</h2>
-                <div className="flex items-center gap-2">
-                  <button className="px-3 py-2 rounded-lg text-white bg-[#003145] hover:bg-[#002535] transition" onClick={() => setShowUse(true)}>Use</button>
-                  <button className="px-3 py-2 rounded-lg border" onClick={startImprove}>Improve</button>
-                  <button className="px-3 py-2 rounded-lg border" onClick={() => setShowCompare(true)}>Compare</button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div className="rounded-lg border border-[#003145]/10 p-3 bg-white/70">
-                  <div className="text-xs text-[#003145]/60">Last updated</div>
-                  <div className="font-medium">{new Date(selected.lastUpdatedAt).toLocaleString()}</div>
-                </div>
-                <div className="rounded-lg border border-[#003145]/10 p-3 bg-white/70">
-                  <div className="text-xs text-[#003145]/60">Labels</div>
-                  <div className="font-medium truncate">{(selected.labels || []).join(', ') || '—'}</div>
-                </div>
-                <div className="rounded-lg border border-[#003145]/10 p-3 bg-white/70">
-                  <div className="text-xs text-[#003145]/60">Tags</div>
-                  <div className="font-medium truncate">{(selected.tags || []).length}</div>
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-[#003145]/10 bg-white/80 p-4">
-                <div className="text-sm text-[#003145]/80">Tags</div>
-                <div className="mt-2"><TagPills tags={selected.tags || []} onTagClick={handleTagClick} /></div>
-              </div>
-
-              <div className="rounded-xl border border-[#003145]/10 bg-white/80 p-4">
-                <div className="text-sm text-[#003145]/80 mb-2">Comments</div>
-                <LibraryComments name={selected.name} />
-              </div>
-
+            <>
               {showUse && (
                 <UsePromptModal text={String(selected.lastPromptText || '')} name={selected.name} tags={selected.tags || []} onClose={() => setShowUse(false)} />
               )}
@@ -445,7 +434,7 @@ export default function LibraryPage(): React.ReactElement {
               {showCompare && (
                 <CompareModal promptOld={String(selected.lastPromptText || '')} promptNew={improveResult || String(selected.lastPromptText || '')} onClose={() => setShowCompare(false)} name={selected.name} />
               )}
-            </div>
+            </>
           )}
         </section>
       </main>
